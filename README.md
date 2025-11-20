@@ -12,7 +12,6 @@ O projeto foi construído utilizando uma stack moderna e robusta:
 * **Componentes UI:** [Shadcn/UI](https://ui.shadcn.com/) (baseado em Radix UI)
 * **Gerenciamento de Estado/Dados:** [TanStack Query (React Query)](https://tanstack.com/query/latest)
 * **Roteamento:** [React Router DOM](https://reactrouter.com/)
-* **Backend/BaaS:** [Supabase](https://supabase.com/) (Autenticação e Banco de Dados)
 * **Formulários:** React Hook Form + Zod
 * **Ícones:** Lucide React
 * **Gerenciador de Pacotes:** Bun (ou NPM)
