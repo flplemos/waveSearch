@@ -6,6 +6,7 @@
 };
 
 export const LOCATIONS: Record<string, LocationData> = {
+  // Rio Grande do Norte
   "ponta-negra": {
     name: "Ponta Negra - Natal (RN)",
     lat: -5.8731,
@@ -26,6 +27,43 @@ export const LOCATIONS: Record<string, LocationData> = {
     lat: -6.1919,
     lng: -35.0481,
   },
+  "tabatinga-rn": {
+    name: "Tabatinga (RN)",
+    lat: -6.0508,
+    lng: -35.0977,
+  },
+  "cotovelo": {
+    name: "Cotovelo (RN)",
+    lat: -5.9819,
+    lng: -35.1231,
+  },
+  "buzios-rn": {
+    name: "Buzios (RN)",
+    lat: -5.9013,
+    lng: -35.1267,
+  },
+  "pirangi": {
+    name: "Pirangi do Norte (RN)",
+    lat: -5.9852,
+    lng: -35.1551,
+  },
+  "santa-rita": {
+    name: "Santa Rita - Extremoz (RN)",
+    lat: -5.695,
+    lng: -35.1487,
+  },
+  "sao-miguel-do-gostoso": {
+    name: "Sao Miguel do Gostoso (RN)",
+    lat: -5.1233,
+    lng: -35.6359,
+  },
+  "touros": {
+    name: "Touros (RN)",
+    lat: -5.1983,
+    lng: -35.4638,
+  },
+
+  // Ceara
   "praia-do-futuro": {
     name: "Praia do Futuro - Fortaleza (CE)",
     lat: -3.7456,
@@ -46,6 +84,8 @@ export const LOCATIONS: Record<string, LocationData> = {
     lat: -2.796,
     lng: -40.5124,
   },
+
+  // Nordeste
   "praia-do-frances": {
     name: "Praia do Frances (AL)",
     lat: -9.771,
@@ -66,6 +106,8 @@ export const LOCATIONS: Record<string, LocationData> = {
     lat: -3.8549,
     lng: -32.4436,
   },
+
+  // Rio de Janeiro
   "barra-da-tijuca": {
     name: "Barra da Tijuca - Rio (RJ)",
     lat: -23.0104,
@@ -81,6 +123,8 @@ export const LOCATIONS: Record<string, LocationData> = {
     lat: -22.9546,
     lng: -43.0386,
   },
+
+  // Sao Paulo
   "maresias": {
     name: "Maresias - Sao Sebastiao (SP)",
     lat: -23.7934,
@@ -106,6 +150,8 @@ export const LOCATIONS: Record<string, LocationData> = {
     lat: -23.9954,
     lng: -46.2566,
   },
+
+  // Santa Catarina
   "joaquina": {
     name: "Joaquina - Florianopolis (SC)",
     lat: -27.6314,
