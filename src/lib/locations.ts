@@ -23,27 +23,27 @@ export const LOCATIONS: Record<string, LocationData> = {
     lng: -35.2031,
   },
   "madeiro": {
-    name: "Praia do Madeiro (RN)",
+    name: "Praia do Madeiro - Tibau do Sul (RN)",
     lat: -6.1919,
     lng: -35.0481,
   },
   "tabatinga-rn": {
-    name: "Tabatinga (RN)",
+    name: "Tabatinga - Nisia Floresta (RN)",
     lat: -6.0508,
     lng: -35.0977,
   },
   "cotovelo": {
-    name: "Cotovelo (RN)",
+    name: "Cotovelo - Parnamirim (RN)",
     lat: -5.9819,
     lng: -35.1231,
   },
   "buzios-rn": {
-    name: "Buzios (RN)",
+    name: "Buzios - Nisia Floresta (RN)",
     lat: -5.9013,
     lng: -35.1267,
   },
   "pirangi": {
-    name: "Pirangi do Norte (RN)",
+    name: "Pirangi do Norte - Parnamirim (RN)",
     lat: -5.9852,
     lng: -35.1551,
   },
@@ -176,6 +176,38 @@ export const LOCATIONS: Record<string, LocationData> = {
     name: "Praia do Rosa - Imbituba (SC)",
     lat: -28.1269,
     lng: -48.6477,
+  },
+
+  // Internacional
+  "pipeline-hawaii": {
+    name: "Pipeline - Oahu (Hawaii, EUA)",
+    lat: 21.6643,
+    lng: -158.0531,
+  },
+  "desert-point": {
+    name: "Desert Point - Lombok (Indonesia)",
+    lat: -8.7519,
+    lng: 115.618,
+  },
+  "teahupoo": {
+    name: "Teahupoo - Tahiti (Polinesia)",
+    lat: -17.8333,
+    lng: -149.2667,
+  },
+  "uluwatu": {
+    name: "Uluwatu - Bali (Indonesia)",
+    lat: -8.8296,
+    lng: 115.0836,
+  },
+  "jeffreys-bay": {
+    name: "Jeffreys Bay (Africa do Sul)",
+    lat: -34.0506,
+    lng: 24.9162,
+  },
+  "snapper-rocks": {
+    name: "Snapper Rocks - Gold Coast (Australia)",
+    lat: -28.165,
+    lng: 153.543,
   },
 };
 
