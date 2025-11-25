@@ -31,8 +31,12 @@ export const calculateDistanceKm = (from: Coordinates, to: Coordinates) => {
   return EARTH_RADIUS_KM * c;
 };
 
-export const getNearestLocations = (coords: Coordinates, limit = 6): NearbyLocation[] =>
-  Object.entries(LOCATIONS)
+export const getNearestLocations = (
+  coords: Coordinates,
+  limit = 6,
+  radiusKm?: number
+): NearbyLocation[] => {
+  const sorted = Object.entries(LOCATIONS)
     .map(([key, data]) => ({
       key: key as LocationKey,
       name: data.name,
@@ -40,5 +44,14 @@ export const getNearestLocations = (coords: Coordinates, limit = 6): NearbyLocat
       lng: data.lng,
       distanceKm: calculateDistanceKm(coords, { lat: data.lat, lng: data.lng }),
     }))
-    .sort((a, b) => a.distanceKm - b.distanceKm)
-    .slice(0, limit);
+    .sort((a, b) => a.distanceKm - b.distanceKm);
+
+  if (radiusKm) {
+    const withinRadius = sorted.filter((item) => item.distanceKm <= radiusKm);
+    if (withinRadius.length) {
+      return withinRadius.slice(0, limit);
+    }
+  }
+
+  return sorted.slice(0, limit);
+};

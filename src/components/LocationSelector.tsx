@@ -46,7 +46,8 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({ selectedLoca
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        setNearbyLocations(getNearestLocations(coords, 6));
+        // Busca locais dentro de 120 km; se faltar, completa com os mais proximos (limite 12)
+        setNearbyLocations(getNearestLocations(coords, 12, 120));
         setGeoStatus("ready");
       },
       (err) => {
