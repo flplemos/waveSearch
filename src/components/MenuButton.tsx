@@ -16,12 +16,12 @@ interface MenuButtonProps {
 }
 
 export const MenuButton: React.FC<MenuButtonProps> = ({ className }) => {
-  const { logout, user } = useAuth();
+  const { signOut, user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   const handleLogout = () => {
-    logout();
+    signOut();
     navigate("/auth");
     toast({
       title: "Logout realizado",
@@ -55,7 +55,7 @@ export const MenuButton: React.FC<MenuButtonProps> = ({ className }) => {
         className="w-48 bg-[#2a2a2a] border-white/10 text-white z-[100]" 
       >
         <div className="px-2 py-1.5 text-sm text-gray-400 border-b border-white/10 mb-1">
-          {user?.name || 'Usuário'}
+          {user?.email || 'Usuário'}
         </div>
         <DropdownMenuItem className="focus:bg-white/10 focus:text-white cursor-pointer">
           <User className="mr-2 h-4 w-4" />

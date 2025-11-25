@@ -16,8 +16,8 @@ export const SocialLoginButton: React.FC<SocialLoginButtonProps> = ({
       case 'google':
         return {
           icon: "https://api.builder.io/api/v1/image/assets/TEMP/84115cc759d77815c0e5d2d827855c49fe29a64c?placeholderIfAbsent=true",
-          text: "Sign in with Google",
-          ariaLabel: "Sign in with Google account"
+          text: "Entrar com o Google",
+          ariaLabel: "Entrar com conta do Google"
         };
       case 'facebook':
         return {

@@ -8,7 +8,8 @@ import { StarRating } from '@/components/StarRating';
 import { WeatherMetric } from '@/components/WeatherMetric';
 import { ForecastCard } from '@/components/ForecastCard';
 import { TideChart } from '@/components/TideChart';
-import { ArrowRight, Waves } from 'lucide-react';
+import { ArrowRight, Waves, Star, MessageSquarePlus, User } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { LOCATIONS, LocationKey } from '@/lib/locations';
 import { Button } from "@/components/ui/button";
 import {
@@ -18,6 +19,10 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ReviewForm } from '@/components/ReviewForm';
+import { formatDistanceToNow } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 const LocationDetails = () => {
   const { id } = useParams();
@@ -25,6 +30,8 @@ const LocationDetails = () => {
   const locationData = LOCATIONS[locationSlug] || LOCATIONS['ponta-negra'];
 
   const [visibleCards, setVisibleCards] = useState<Record<string, boolean>>({});
+  // 1. Estado para controlar se o modal está aberto ou fechado
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const toggleCardVisibility = (day: string) => {
     setVisibleCards(prev => ({
@@ -36,13 +43,11 @@ const LocationDetails = () => {
   const fetchWeatherData = async () => {
     const { lat, lng } = locationData;
     
-    // 1. Buscamos dados do CLIMA
     const weatherRes = await fetch(
       `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,wind_speed_10m,wind_direction_10m&hourly=temperature_2m`
     );
     const weather = await weatherRes.json();
 
-    // 2. Buscamos dados do MAR (Ondas + MARÉ REAL)
     const marineRes = await fetch(
       `https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lng}&current=wave_height,wave_direction&hourly=wave_height,sea_level_height_msl&timezone=auto`
     );
@@ -56,7 +61,28 @@ const LocationDetails = () => {
     queryFn: fetchWeatherData
   });
 
-  // --- PREPARANDO DADOS DA MARÉ ---
+  // Query para buscar as avaliações
+  const { data: reviews, refetch: refetchReviews } = useQuery({
+    queryKey: ['reviews', locationSlug],
+    queryFn: async () => {
+      // 2. Criar data de "Hoje à 00:00" para filtrar
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const todayISO = today.toISOString();
+
+      const { data, error } = await supabase
+        .from('reviews')
+        .select('*')
+        .eq('location', locationSlug)
+        .gte('created_at', todayISO) // 3. Filtro: Apenas criados DEPOIS da meia-noite de hoje
+        .order('created_at', { ascending: false })
+        .limit(20);
+      
+      if (error) throw error;
+      return data;
+    }
+  });
+
   const tideData = data?.marine?.hourly?.time
     ? data.marine.hourly.time
         .slice(0, 24)
@@ -66,7 +92,6 @@ const LocationDetails = () => {
         }))
     : [];
 
-  // Dados atuais
   const currentTemp = data?.weather?.current?.temperature_2m 
     ? `${Math.round(data.weather.current.temperature_2m)}°C` 
     : '--';
@@ -79,7 +104,6 @@ const LocationDetails = () => {
   const waveHeight = data?.marine?.current?.wave_height || 0;
   const starRating = waveHeight > 2 ? 5 : waveHeight > 1.5 ? 4 : waveHeight > 1 ? 3 : 2;
 
-  // TRADUÇÃO DAS MENSAGENS
   const getConditionTitle = () => {
     if (isLoading) return "Carregando...";
     if (waveHeight > 2) return "Condições Épicas,\nséries grandes entrando.";
@@ -107,7 +131,6 @@ const LocationDetails = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          
           {/* BOX DA ESQUERDA */}
           <div className="bg-[rgba(45,45,45,0.75)] backdrop-blur-md rounded-[20px] p-4 sm:p-6 border border-[rgba(255,255,255,0.1)] flex flex-col justify-between gap-4">
             <LocationSelector selectedLocation={locationSlug} />
@@ -153,7 +176,6 @@ const LocationDetails = () => {
                 {getConditionTitle()}
               </h1>
               <p className="text-3xl sm:text-4xl lg:text-5xl font-bold">
-                {/* MENSAGEM PRINCIPAL TRADUZIDA */}
                 {starRating >= 4 ? "O mar está bombando!" : "Bora pro surf!"}
               </p>
             </div>
@@ -165,6 +187,80 @@ const LocationDetails = () => {
             </div>
           </div>
         </div>
+
+        {/* SEÇÃO DE AVALIAÇÕES */}
+        <div className="w-full">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-white text-xl sm:text-2xl font-semibold">Relatos de Hoje</h2>
+            
+            {/* 4. Controlamos o Dialog com 'open' e 'onOpenChange' */}
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="bg-[#5EADED] hover:bg-[#4c9bd6] text-white gap-2">
+                  <MessageSquarePlus className="w-4 h-4" />
+                  <span className="hidden sm:inline">Avaliar pico</span>
+                  <span className="sm:hidden">Avaliar</span>
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="bg-[#2a2a2a] border-white/10 text-white max-w-md w-[90%] rounded-xl">
+                <DialogHeader>
+                  <DialogTitle>Como está o mar hoje?</DialogTitle>
+                </DialogHeader>
+                
+                {/* 5. Passamos a função para fechar o modal no sucesso */}
+                <ReviewForm 
+                  locationSlug={locationSlug} 
+                  onSuccess={() => {
+                    refetchReviews();
+                    setIsDialogOpen(false); // Fecha o modal
+                  }} 
+                />
+              </DialogContent>
+            </Dialog>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {reviews?.length === 0 ? (
+              <div className="col-span-full bg-[rgba(45,45,45,0.6)] backdrop-blur-sm border border-white/10 rounded-xl p-8 text-center">
+                <p className="text-gray-400">Nenhum relato hoje. O que acha de ser o primeiro?</p>
+              </div>
+            ) : (
+              reviews?.map((review: any) => (
+                <div key={review.id} className="bg-[rgba(45,45,45,0.8)] backdrop-blur-sm border border-white/10 rounded-xl p-4 transition hover:bg-[rgba(45,45,45,0.9)]">
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+                        <User className="w-4 h-4 text-gray-400" />
+                      </div>
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-sm text-gray-300 font-medium truncate">
+                          {review.user_name || "Surfista Local"}
+                        </span>
+                        <span className="text-[10px] text-gray-500 uppercase tracking-wider">
+                          {review.created_at && formatDistanceToNow(new Date(review.created_at), { addSuffix: true, locale: ptBR })}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex gap-0.5 shrink-0">
+                      {[...Array(5)].map((_, i) => (
+                        <Star 
+                          key={i} 
+                          className={`w-3 h-3 ${i < review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-600'}`} 
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  {review.comment && (
+                    <p className="text-gray-300 text-sm mt-2 leading-relaxed break-words">
+                      "{review.comment}"
+                    </p>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
       </div>
       
       <div className="relative z-10 w-full mt-auto">
