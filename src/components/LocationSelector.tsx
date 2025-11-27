@@ -1,15 +1,20 @@
-﻿import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { MapPin, Navigation2, Search as SearchIcon } from "lucide-react";
+﻿import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { MapPin, Navigation2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectSeparator,
-  SelectTrigger,
-} from "@/components/ui/select";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  CommandSeparator,
+} from "@/components/ui/command";
 import { LOCATIONS, LocationKey } from "@/lib/locations";
 import { getNearestLocations, NearbyLocation } from "@/lib/geo";
 
@@ -24,13 +29,11 @@ const formatDistance = (distanceKm: number) =>
 
 export const LocationSelector: React.FC<LocationSelectorProps> = ({ selectedLocation }) => {
   const navigate = useNavigate();
-  const inputRef = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
   const [geoStatus, setGeoStatus] = useState<
     "idle" | "locating" | "ready" | "denied" | "unsupported" | "error" | "fallback"
   >("idle");
   const [nearbyLocations, setNearbyLocations] = useState<NearbyLocation[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
 
   const sortedLocations = useMemo(
     () => Object.entries(LOCATIONS).sort((a, b) => a[1].name.localeCompare(b[1].name)),
@@ -42,7 +45,6 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({ selectedLoca
     : "Selecione um local";
 
   const loadFromCoords = useCallback((coords: { lat: number; lng: number }) => {
-    // Permite ate 15 praias, prioriza dentro de 200 km
     setNearbyLocations(getNearestLocations(coords, 15, 200));
   }, []);
 
@@ -66,7 +68,6 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({ selectedLoca
         } else {
           setGeoStatus("error");
         }
-        // fallback para Natal quando GPS falha/negado
         loadFromCoords(RN_FALLBACK_COORDS);
         setGeoStatus("fallback");
       },
@@ -78,19 +79,9 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({ selectedLoca
     requestLocation();
   }, [requestLocation]);
 
-  const handleValueChange = (value: string) => {
+  const handleSelect = (value: string) => {
     navigate(`/location/${value}`);
     setOpen(false);
-  };
-
-  const handleOpenChange = (next: boolean) => {
-    setOpen(next);
-    if (next) {
-      // Foca o input quando abrir para digitar direto
-      setTimeout(() => inputRef.current?.focus(), 0);
-    } else {
-      setSearchTerm("");
-    }
   };
 
   const geoMessage = useMemo(() => {
@@ -112,95 +103,70 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({ selectedLoca
     }
   }, [geoStatus, nearbyLocations.length]);
 
-  const searchLower = searchTerm.toLowerCase();
-  const filterMatch = (text: string) => text.toLowerCase().includes(searchLower);
-
-  const filteredNearby = useMemo(
-    () =>
-      nearbyLocations.filter((item) =>
-        !searchTerm ? true : filterMatch(item.name) || filterMatch(item.key)
-      ),
-    [nearbyLocations, searchTerm]
-  );
-
-  const filteredAll = useMemo(
-    () =>
-      sortedLocations.filter(([key, data]) =>
-        !searchTerm ? true : filterMatch(data.name) || filterMatch(key)
-      ),
-    [searchTerm, sortedLocations]
-  );
-
-  const stopPropagationKeys = {
-    onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => e.stopPropagation(),
-    onKeyUp: (e: React.KeyboardEvent<HTMLInputElement>) => e.stopPropagation(),
-    onClick: (e: React.MouseEvent<HTMLInputElement>) => e.stopPropagation(),
-  };
+  const nearbyKeys = new Set(nearbyLocations.map((item) => item.key));
+  const remainingLocations = sortedLocations.filter(([key]) => !nearbyKeys.has(key as LocationKey));
 
   return (
     <div className="w-full space-y-2">
-      <Select onValueChange={handleValueChange} value={selectedLocation} open={open} onOpenChange={handleOpenChange}>
-        <SelectTrigger className="flex h-auto items-center gap-3 bg-[rgba(70,70,70,0.8)] backdrop-blur-md px-6 py-4 rounded-[20px] text-[rgba(203,203,203,1)] text-lg font-normal hover:bg-[rgba(80,80,80,0.8)] transition-colors border border-[rgba(255,255,255,0.1)] w-full border-none outline-none ring-0 focus:ring-0">
-          <div className="flex items-center gap-3 flex-1 text-left">
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            className="flex h-auto items-center gap-3 bg-[rgba(70,70,70,0.85)] backdrop-blur-md px-6 py-4 rounded-[20px] text-white text-lg font-normal hover:bg-[rgba(80,80,80,0.9)] transition-colors border border-white/10 w-full border-none outline-none ring-0 focus:ring-0"
+          >
             <MapPin className="w-6 h-6 text-[rgba(94,173,237,1)] shrink-0" strokeWidth={2} />
-            <span className="truncate text-white">{locationName}</span>
-          </div>
-        </SelectTrigger>
+            <span className="truncate text-left flex-1">{locationName}</span>
+          </button>
+        </PopoverTrigger>
+        <PopoverContent
+          sideOffset={10}
+          className="p-0 w-[min(420px,90vw)] bg-[#0f1116]/95 text-white border border-white/10 shadow-2xl backdrop-blur-xl"
+        >
+          <Command className="bg-transparent text-white">
+            <CommandInput
+              autoFocus
+              placeholder="Buscar praia pelo nome"
+              className="h-11 text-sm text-white placeholder:text-white/60 border-b border-white/10 bg-transparent"
+            />
+            <CommandList className="max-h-[60vh] overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:bg-white/15 [&::-webkit-scrollbar-thumb]:rounded-full">
+              <CommandEmpty className="px-3 py-4 text-sm text-white/60">Nenhuma praia encontrada.</CommandEmpty>
 
-        <SelectContent className="bg-[#2a2a2a] border-[#444] text-white z-50 max-h-[360px]">
-          <div className="sticky top-0 z-10 bg-[#2a2a2a] px-3 pt-3 pb-2 border-b border-white/10">
-            <div className="flex items-center gap-2 rounded-md border border-white/10 bg-[#1f1f1f] px-3 py-2">
-              <SearchIcon className="w-4 h-4 text-white/60" />
-              <input
-                ref={inputRef}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Buscar praia pelo nome"
-                className="bg-transparent text-sm text-white placeholder:text-white/50 outline-none w-full"
-                spellCheck={false}
-                {...stopPropagationKeys}
-              />
-            </div>
-          </div>
+              {nearbyLocations.length > 0 && (
+                <CommandGroup heading="Praias perto de voce" className="text-white/90">
+                  {nearbyLocations.map((item) => (
+                    <CommandItem
+                      key={`near-${item.key}`}
+                      value={item.key}
+                      onSelect={handleSelect}
+                      className="cursor-pointer data-[selected=true]:bg-white/10 data-[selected=true]:text-white"
+                    >
+                      <div className="flex flex-col">
+                        <span className="text-base">{item.name}</span>
+                        <span className="text-xs text-white/60">{formatDistance(item.distanceKm)}</span>
+                      </div>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              )}
 
-          {filteredNearby.length > 0 && (
-            <SelectGroup>
-              <SelectLabel className="text-xs text-white/70">Praias perto de voce</SelectLabel>
-              {filteredNearby.map((item) => (
-                <SelectItem
-                  key={`near-${item.key}`}
-                  value={item.key}
-                  className="focus:bg-[#3a3a3a] focus:text-white cursor-pointer py-3 text-base"
-                >
-                  <div className="flex flex-col">
-                    <span>{item.name}</span>
-                    <span className="text-xs text-white/60">{formatDistance(item.distanceKm)}</span>
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectGroup>
-          )}
+              {nearbyLocations.length > 0 && <CommandSeparator className="bg-white/10" />}
 
-          {filteredNearby.length > 0 && <SelectSeparator className="bg-white/10" />}
-
-          <SelectGroup>
-            <SelectLabel className="text-xs text-white/70">Todas as praias</SelectLabel>
-            {filteredAll.map(([key, data]) => (
-              <SelectItem
-                key={key}
-                value={key}
-                className="focus:bg-[#3a3a3a] focus:text-white cursor-pointer py-3 text-base"
-              >
-                {data.name}
-              </SelectItem>
-            ))}
-          </SelectGroup>
-
-          {searchTerm && filteredNearby.length === 0 && filteredAll.length === 0 && (
-            <div className="px-3 py-4 text-sm text-white/60">Nenhuma praia encontrada.</div>
-          )}
-        </SelectContent>
-      </Select>
+              <CommandGroup heading="Todas as praias" className="text-white/90">
+                {remainingLocations.map(([key, data]) => (
+                  <CommandItem
+                    key={key}
+                    value={key}
+                    onSelect={handleSelect}
+                    className="cursor-pointer data-[selected=true]:bg-white/10 data-[selected=true]:text-white"
+                  >
+                    <span className="text-base">{data.name}</span>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
 
       <div className="flex items-center justify-between gap-2 text-xs text-white/70">
         <span className="truncate">{geoMessage}</span>
