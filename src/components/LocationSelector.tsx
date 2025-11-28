@@ -34,6 +34,10 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({ selectedLoca
     "idle" | "locating" | "ready" | "denied" | "unsupported" | "error" | "fallback"
   >("idle");
   const [nearbyLocations, setNearbyLocations] = useState<NearbyLocation[]>([]);
+  const [shouldAutoFocus, setShouldAutoFocus] = useState(false);
+  const [viewportHeight, setViewportHeight] = useState(
+    typeof window !== "undefined" ? window.innerHeight : 800
+  );
 
   const sortedLocations = useMemo(
     () => Object.entries(LOCATIONS).sort((a, b) => a[1].name.localeCompare(b[1].name)),
@@ -79,6 +83,31 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({ selectedLoca
     requestLocation();
   }, [requestLocation]);
 
+  useEffect(() => {
+    const isTouchDevice =
+      typeof window !== "undefined" && ("ontouchstart" in window || navigator.maxTouchPoints > 0);
+    setShouldAutoFocus(!isTouchDevice);
+  }, []);
+
+  useEffect(() => {
+    const updateHeight = () => {
+      if (typeof window !== "undefined") {
+        setViewportHeight(window.innerHeight);
+      }
+    };
+
+    updateHeight();
+    window.addEventListener("resize", updateHeight);
+
+    const vv = typeof window !== "undefined" ? (window as any).visualViewport : undefined;
+    vv?.addEventListener("resize", updateHeight);
+
+    return () => {
+      window.removeEventListener("resize", updateHeight);
+      vv?.removeEventListener("resize", updateHeight);
+    };
+  }, []);
+
   const handleSelect = (value: string) => {
     navigate(`/location/${value}`);
     setOpen(false);
@@ -106,6 +135,10 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({ selectedLoca
   const nearbyKeys = new Set(nearbyLocations.map((item) => item.key));
   const remainingLocations = sortedLocations.filter(([key]) => !nearbyKeys.has(key as LocationKey));
 
+  const contentMaxHeightPx = Math.max(280, Math.min(viewportHeight * 0.8, viewportHeight - 48));
+  const contentMaxHeight = `min(${contentMaxHeightPx}px, var(--radix-popper-available-height, 100vh))`;
+  const listMaxHeight = `calc(${contentMaxHeight} - 52px)`;
+
   return (
     <div className="w-full space-y-2">
       <Popover open={open} onOpenChange={setOpen}>
@@ -120,15 +153,21 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({ selectedLoca
         </PopoverTrigger>
         <PopoverContent
           sideOffset={10}
-          className="p-0 w-[min(420px,90vw)] bg-[#0f1116]/95 text-white border border-white/10 shadow-2xl backdrop-blur-xl"
+          collisionPadding={16}
+          onOpenAutoFocus={(event) => event.preventDefault()}
+          style={{ maxHeight: contentMaxHeight }}
+          className="p-0 w-[min(420px,92vw)] bg-[#0f1116]/95 text-white border border-white/10 shadow-2xl backdrop-blur-xl overflow-hidden flex flex-col"
         >
-          <Command className="bg-transparent text-white">
+          <Command className="bg-transparent text-white flex flex-col h-full">
             <CommandInput
-              autoFocus
+              autoFocus={shouldAutoFocus}
               placeholder="Buscar praia pelo nome"
               className="h-11 text-sm text-white placeholder:text-white/60 border-b border-white/10 bg-transparent"
             />
-            <CommandList className="max-h-[60vh] overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:bg-white/15 [&::-webkit-scrollbar-thumb]:rounded-full">
+            <CommandList
+              style={{ maxHeight: listMaxHeight }}
+              className="flex-1 min-h-0 overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:bg-white/15 [&::-webkit-scrollbar-thumb]:rounded-full"
+            >
               <CommandEmpty className="px-3 py-4 text-sm text-white/60">Nenhuma praia encontrada.</CommandEmpty>
 
               {nearbyLocations.length > 0 && (
